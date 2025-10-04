@@ -331,6 +331,36 @@ const styles = StyleSheet.create({
     color: LIQUID_GLASS_COLORS.primary.turquoise,
     ...TEXT_OUTLINE_STYLE
   },
+  languageSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
+    flexWrap: 'wrap'
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)'
+  },
+  languageOptionActive: {
+    backgroundColor: LIQUID_GLASS_COLORS.primary.coral,
+    borderColor: 'rgba(255, 255, 255, 0.45)'
+  },
+  languageOptionText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: LIQUID_GLASS_COLORS.text.primary,
+    ...TEXT_OUTLINE_STYLE
+  },
+  languageOptionTextActive: {
+    color: '#FFFFFF'
+  },
   nameItem: {
     paddingVertical: 12,
     borderBottomWidth: 1,

@@ -1,28 +1,36 @@
 import React from 'react';
 import { View, ViewStyle, StyleSheet, StyleProp } from 'react-native';
+import type { ColorValue } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LIQUID_GLASS_COLORS } from '@/constants/colors';
+
+type GradientTuple = readonly [ColorValue, ColorValue, ...ColorValue[]];
 
 interface GlassContainerProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   blurIntensity?: number;
-  gradientColors?: string[];
+  gradientColors?: GradientTuple;
   borderRadius?: number;
 }
+
+const DEFAULT_GRADIENT: GradientTuple = [
+  'rgba(255, 255, 255, 0.1)',
+  'rgba(255, 255, 255, 0.05)'
+] as const;
 
 export const GlassContainer: React.FC<GlassContainerProps> = ({
   children,
   style,
   blurIntensity = 15,
-  gradientColors = ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)'],
+  gradientColors = DEFAULT_GRADIENT,
   borderRadius = 20
 }) => {
   return (
     <View style={[styles.container, style, { borderRadius }]}>
       <LinearGradient
-        colors={gradientColors}
+        colors={gradientColors ?? DEFAULT_GRADIENT}
         style={[StyleSheet.absoluteFillObject, { borderRadius }]}
       />
       <BlurView

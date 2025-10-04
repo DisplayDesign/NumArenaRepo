@@ -23,8 +23,6 @@ export const PieceSelector: React.FC<PieceSelectorProps> = ({
   onSelect,
   onCancel
 }) => {
-  console.log('[PIECE_SELECTOR] render with visible:', visible);
-  
   return (
     <Modal
       visible={visible}
@@ -58,7 +56,6 @@ export const PieceSelector: React.FC<PieceSelectorProps> = ({
                       key={piece}
                       style={styles.pieceButton}
                       onPress={() => {
-                        console.log('[PIECE_SELECTOR] select piece:', piece);
                         onSelect(piece);
                       }}
                     >
@@ -77,7 +74,6 @@ export const PieceSelector: React.FC<PieceSelectorProps> = ({
                   <TouchableOpacity
                     style={styles.pieceButton}
                     onPress={() => {
-                      console.log('[PIECE_SELECTOR] select n piece');
                       onSelect('n');
                     }}
                   >

@@ -28,12 +28,12 @@ export const PlayerInventory: React.FC<PlayerInventoryProps> = ({
   const playerColor = PLAYER_COLORS[playerId];
   
   return (
-    <GlassContainer 
+    <GlassContainer
       style={isSelf && isCurrentPlayer ? [styles.inventoryContainer, styles.activeInventory] as any : (styles.inventoryContainer as any)}
       gradientColors={[
         `${playerColor}20`,
         `${playerColor}10`
-      ]}
+      ] as const}
     >
       <View style={styles.playerInfo}>
         <View>

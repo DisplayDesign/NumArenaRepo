@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import type { ColorValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -146,7 +147,7 @@ export default function HomeScreen() {
             subtitle={t('home.play_local_desc')}
             icon={<Users size={32} color="#FFFFFF" />}
             onPress={() => router.push('/matchmaking?type=local')}
-            gradient={['#FF6B6B', '#FF8E8E']}
+            gradient={['#FF6B6B', '#FF8E8E'] as const}
           />
 
           <GameModeCard
@@ -154,7 +155,7 @@ export default function HomeScreen() {
             subtitle={t('home.play_ai_desc')}
             icon={<Cpu size={32} color="#FFFFFF" />}
             onPress={() => navigateToGame('ai')}
-            gradient={['#4ECDC4', '#95E1D3']}
+            gradient={['#4ECDC4', '#95E1D3'] as const}
           />
 
           <GameModeCard
@@ -162,7 +163,7 @@ export default function HomeScreen() {
             subtitle={t('home.play_online_desc')}
             icon={<Globe size={32} color="#FFFFFF" />}
             onPress={() => router.push('/matchmaking')}
-            gradient={['#A8E6CF', '#C7CEEA']}
+            gradient={['#A8E6CF', '#C7CEEA'] as const}
           />
 
           <GameModeCard
@@ -170,7 +171,7 @@ export default function HomeScreen() {
             subtitle={t('home.rules_desc')}
             icon={<Info size={32} color="#FFFFFF" />}
             onPress={showRules}
-            gradient={['#FFD93D', '#FFE66D']}
+            gradient={['#FFD93D', '#FFE66D'] as const}
           />
         </View>
 
@@ -179,19 +180,19 @@ export default function HomeScreen() {
           <StatCard
             label={t('home.wins')}
             value={playerData?.wins || 0}
-            gradient={["rgba(255,107,107,0.25)", "rgba(255,107,107,0.08)"]}
+            gradient={["rgba(255,107,107,0.25)", "rgba(255,107,107,0.08)"] as const}
             accent="#FF6B6B"
           />
           <StatCard
             label={t('home.losses')}
             value={playerData?.losses || 0}
-            gradient={["rgba(180,190,200,0.25)", "rgba(180,190,200,0.08)"]}
+            gradient={["rgba(180,190,200,0.25)", "rgba(180,190,200,0.08)"] as const}
             accent="#A7B1C2"
           />
           <StatCard
             label={t('home.total_games')}
             value={playerData?.totalGames || 0}
-            gradient={["rgba(78,205,196,0.25)", "rgba(78,205,196,0.08)"]}
+            gradient={["rgba(78,205,196,0.25)", "rgba(78,205,196,0.08)"] as const}
             accent="#4ECDC4"
           />
         </View>
@@ -201,12 +202,14 @@ export default function HomeScreen() {
   );
 }
 
+type GradientPair = readonly [ColorValue, ColorValue];
+
 interface GameModeCardProps {
   title: string;
   subtitle: string;
   icon: React.ReactNode;
   onPress: () => void;
-  gradient: readonly [string, string];
+  gradient: GradientPair;
 }
 
 const GameModeCard: React.FC<GameModeCardProps> = ({
@@ -217,7 +220,7 @@ const GameModeCard: React.FC<GameModeCardProps> = ({
   gradient
 }) => (
   <TouchableOpacity onPress={onPress} style={styles.gameModeCard}>
-    <LinearGradient colors={gradient as any} style={styles.cardGradient}>
+    <LinearGradient colors={gradient} style={styles.cardGradient}>
       <View style={styles.cardContent}>
         <View style={styles.cardIcon}>
           {icon}
@@ -234,7 +237,7 @@ const GameModeCard: React.FC<GameModeCardProps> = ({
 interface StatCardProps {
   label: string;
   value: number;
-  gradient: string[];
+  gradient: GradientPair;
   accent: string;
 }
 
