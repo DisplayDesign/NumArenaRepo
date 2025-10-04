@@ -14,7 +14,7 @@ import { useGame } from '@/contexts/GameContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { StorageManager } from '@/utils/storage';
 import { showInterstitial, loadInterstitial } from '@/utils/ads';
-import { Player, GameResult } from '@/types/game';
+import { Player, GameResult, GameState } from '@/types/game';
 import { RatingSystem } from '@/utils/rating';
 import { GameResultOverlay } from '@/components/game/GameResultOverlay';
 import { chooseAiMove, AiLevel } from '@/utils/ai';
@@ -46,7 +46,6 @@ export default function GameScreen() {
   
   // ゲーム初期化（オンライン以外）
   useEffect(() => {
-    console.log('[GAME] mount, status=', gameState.gameStatus, 'mode=', params.mode, 'role=', params.role, 'room=', params.room);
     if (!gameStarted && String(params.mode) !== 'online') {
       if (String(params.mode) === 'ai' && !aiStartConfirmed) return;
       const player1: Player = {
@@ -63,7 +62,6 @@ export default function GameScreen() {
         pieces: [1, 2, 3, 4, 5, 6, 7, 8],
         nPieces: 0
       };
-      console.log('[GAME] startGame');
       startGame(player1, player2);
       setGameStarted(true);
     }
@@ -72,7 +70,6 @@ export default function GameScreen() {
   // オンライン: 初期状態クリア（マウント時のみ）
   useEffect(() => {
     if (String(params.mode) === 'online') {
-      console.log('[GAME] clearing initial state for online mode');
       setShowResult(false);
       setShowPieceSelector(false);
       setSelectedCell(null);
@@ -105,25 +102,17 @@ export default function GameScreen() {
   // デバッグ: resolvedRole と isUserTurn の変化を監視
   useEffect(() => {
     if (String(params.mode) === 'online') {
-      console.log('[GAME] resolvedRole changed:', resolvedRole);
-      console.log('[GAME] isUserTurn changed:', isUserTurn);
-      console.log('[GAME] currentPlayer:', gameState.currentPlayer);
-      console.log('[GAME] players:', gameState.players?.map(p => p?.name));
-      console.log('[GAME] gameStatus:', gameState.gameStatus);
-      console.log('[GAME] gameStarted:', gameStarted);
-      console.log('[GAME] showResult:', showResult);
+      // resolvedRole が未確定の場合はターン制御を無効化して待機
     }
   }, [resolvedRole, isUserTurn, gameState.currentPlayer, gameState.players, gameState.gameStatus, gameStarted, showResult, params.mode]);
 
   // ホストの初期化処理（統合版）
   useEffect(() => {
     if (String(params.mode) === 'online' && resolvedRole === 'p0' && !gameInitializedRef.current) {
-      console.log('[GAME] host initialization starting');
       try {
         const p1: Player = { id: 0, name: playerData?.displayName || 'あなた', rating: playerData?.rating || 1200, pieces: [1,2,3,4,5,6,7,8], nPieces: 0 };
         const p2Name = 'プレイヤー2';
         const p2: Player = { id: 1, name: p2Name, rating: 1200, pieces: [1,2,3,4,5,6,7,8], nPieces: 0 };
-        console.log('[GAME] creating initial game state with players:', p1.name, p2.name);
 
         // ゲーム状態を初期化して即時送信
         startGame(p1, p2);
@@ -133,19 +122,16 @@ export default function GameScreen() {
         // すぐに状態を送信（確実に適用された後）
         setTimeout(() => {
           const currentState = latestStateRef.current || gameState;
-          console.log('[GAME] current state before sending - board exists:', !!currentState.board, 'players length:', currentState.players?.length);
           const initialState = {
             ...currentState,
             currentPlayer: 0, // ホスト（p0）が先攻
             gameStatus: 'playing',
             moveHistory: []
           };
-          console.log('[GAME] initial state before sending - board exists:', !!initialState.board, 'players length:', initialState.players?.length);
           syncState(initialState as any);
           latestStateRef.current = initialState;
           (latestStateRef.current as any)._lastSentState = JSON.stringify(initialState);
           sendState(String(params.room), initialState as any);
-          console.log('[GAME] host initialization completed');
         }, 50);
       } catch (e) {
         console.error('[GAME] host initialization error:', e);
@@ -155,7 +141,6 @@ export default function GameScreen() {
 
   // 表示用: どちらのインベントリがローカルユーザーか
   const mode = String(params.mode || 'local');
-  const role = String(params.role || 'p0');
   // 表示/自分判定は resolvedRole を唯一の真実として用いる
   const isSelfP0 = mode === 'online' ? resolvedRole === 'p0' : true;
   const isSelfP1 = mode === 'online' ? resolvedRole === 'p1' : false;
@@ -230,115 +215,100 @@ export default function GameScreen() {
   }, [params.mode, gameState.gameStatus, gameState.players, playerData]);
 
   // 旧 initializeGame は startGame に置き換え
-  
-  const handleCellPress = useCallback((row: number, col: number) => {
-    console.log('[GAME] handleCellPress called:', { row, col, isUserTurn, resolvedRole, currentPlayer: gameState.currentPlayer });
 
-    const cell = gameState.board[row][col];
-    const occupied = cell !== null;
-    // 最新ステートで判定（useMemoの遅延や描画ラグ対策）
-    const live = (latestStateRef.current as any) || gameState;
-    const liveStatus = live.gameStatus;
-    const liveCurrent = live.currentPlayer;
-    // URL の role を唯一の真実として使用
-    const roleParam = String(params.role || 'p0') as 'p0' | 'p1';
-    const myIdNow = roleParam === 'p1' ? 1 : 0;
-    const isTurnNow = liveStatus === 'playing' && liveCurrent === myIdNow;
+  const canActThisTurn = useCallback(
+    (status: GameState['gameStatus'], currentPlayerId: number) => {
+      if (status !== 'playing') {
+        return false;
+      }
+      const mode = String(params.mode || 'local');
+      if (mode === 'online') {
+        if (resolvedRole === 'unknown') {
+          return false;
+        }
+        const myId = resolvedRole === 'p1' ? 1 : 0;
+        return currentPlayerId === myId;
+      }
+      if (mode === 'ai') {
+        return currentPlayerId === 0;
+      }
+      return true;
+    },
+    [params.mode, resolvedRole]
+  );
 
-    console.log('[PRESS] cell', row, col, 'status=', liveStatus, 'occupied=', occupied);
-    console.log('[PRESS] selector before:', showPieceSelector);
-    console.log('[PRESS] turn check:', { currentPlayer: liveCurrent, isUserTurn: isTurnNow, mode: String(params.mode), role: String(params.role || '') });
+  const handleCellPress = useCallback(
+    (row: number, col: number) => {
+      const live = (latestStateRef.current as any) || gameState;
+      const liveBoard = live?.board ?? gameState.board;
+      const liveStatus: GameState['gameStatus'] = live?.gameStatus ?? gameState.gameStatus;
+      const liveCurrent: number = live?.currentPlayer ?? gameState.currentPlayer;
 
-    // シンプルな条件チェック
-    if (liveStatus !== 'playing') {
-      console.log('[GAME] cell press blocked - game not playing');
-      return;
-    }
-    if (!isTurnNow) {
-      console.log('[GAME] cell press blocked - not your turn');
-      return;
-    }
-    // 自分のコマが置かれているセルはブロック。それ以外（空 or 相手コマ）は選択可。
-    if (occupied && cell!.playerId === liveCurrent) {
-      console.log('[GAME] cell press blocked - own piece');
-      return;
-    }
+      if (!canActThisTurn(liveStatus, liveCurrent)) {
+        return;
+      }
 
-    console.log('[PRESS] open selector');
-    setSelectedCell({ row, col });
-    setShowPieceSelector(true);
-    console.log('[GAME] showPieceSelector after setState:', true);
-  }, [gameState.board, showPieceSelector, resolvedRole, params.mode, params.role, isUserTurn, gameState.currentPlayer, gameStarted]);
-  
-  const handlePieceSelect = useCallback((piece: number | 'n') => {
-    console.log('[SELECT] piece', piece, 'at', selectedCell);
+      const boardRow = liveBoard?.[row];
+      if (!boardRow) {
+        return;
+      }
+      const cell = boardRow[col];
+      const occupied = cell !== null && cell !== undefined;
 
-    // 最新の状態を取得（同期ラグ対策）
-    const live = (latestStateRef.current as any) || gameState;
-    const liveStatus = live.gameStatus;
-    const liveCurrent = live.currentPlayer;
+      if (occupied && cell!.playerId === liveCurrent) {
+        return;
+      }
 
-    console.log('[GAME] current player (live):', liveCurrent);
-    console.log('[GAME] available pieces:', live.players[liveCurrent].pieces);
-    console.log('[GAME] n pieces:', live.players[liveCurrent].nPieces);
-    console.log('[GAME] game status (live):', liveStatus);
-    console.log('[GAME] isUserTurn check:', isUserTurn);
-    console.log('[GAME] resolvedRole:', resolvedRole);
+      setSelectedCell({ row, col });
+      setShowPieceSelector(true);
+    },
+    [gameState, canActThisTurn]
+  );
 
-    // 最新の状態で自分のターンかチェック
-    const roleParam = String(params.role || 'p0') as 'p0' | 'p1';
-    const myIdNow = roleParam === 'p1' ? 1 : 0;
-    const isTurnNow = liveStatus === 'playing' && liveCurrent === myIdNow;
+  const handlePieceSelect = useCallback(
+    (piece: number | 'n') => {
+      if (!selectedCell) {
+        return;
+      }
 
-    if (!isTurnNow) {
-      console.log('[GAME] not your turn (live check)');
-      return;
-    }
-    if (!selectedCell) {
-      console.log('[GAME] no selected cell');
-      return;
-    }
-    
-    // オンラインゲームの場合
-    if (String(params.mode) === 'online' && params.room) {
-      const roleParam = String(params.role || 'p0');
+      const live = (latestStateRef.current as any) || gameState;
+      const liveStatus: GameState['gameStatus'] = live?.gameStatus ?? gameState.gameStatus;
+      const liveCurrent: number = live?.currentPlayer ?? gameState.currentPlayer;
 
-      // ホスト（p0）は通常通りmakeMoveを実行
-      if (roleParam === 'p0') {
-        const success = makeMove(selectedCell.row, selectedCell.col, piece);
-        console.log('[GAME] makeMove result', success);
+      if (!canActThisTurn(liveStatus, liveCurrent)) {
+        return;
+      }
 
-        if (success) {
+      const mode = String(params.mode || 'local');
+
+      if (mode === 'online' && params.room) {
+        if (resolvedRole === 'p0') {
+          const success = makeMove(selectedCell.row, selectedCell.col, piece);
+          if (success) {
+            setShowPieceSelector(false);
+            setSelectedCell(null);
+          }
+        } else if (resolvedRole === 'p1') {
+          if (pendingMoveRef.current) {
+            return;
+          }
+          pendingMoveRef.current = true;
+          sendMove(String(params.room), { row: selectedCell.row, col: selectedCell.col, piece, playerId: 1 });
           setShowPieceSelector(false);
           setSelectedCell(null);
-        } else {
-          // 無効手はモーダルを出さず無視（ラグ時の誤検出でユーザー体験が悪化するため）
         }
-      } else {
-        // ゲスト（p1）はリクエストのみ送信（ローカル状態更新はホストからの同期を待つ）
-        if (pendingMoveRef.current) {
-          console.log('[GAME] guest move pending - ignore');
-          return;
-        }
-        console.log('[SEND] guest -> host', { row: selectedCell.row, col: selectedCell.col, piece });
-        pendingMoveRef.current = true;
-        sendMove(String(params.room), { row: selectedCell.row, col: selectedCell.col, piece, playerId: 1 });
-        setShowPieceSelector(false);
-        setSelectedCell(null);
+        return;
       }
-    } else {
-      // ローカルゲームの場合
+
       const success = makeMove(selectedCell.row, selectedCell.col, piece);
-      console.log('[GAME] makeMove result', success);
 
       if (success) {
         setShowPieceSelector(false);
         setSelectedCell(null);
-      } else {
-        // 無効手はモーダルを出さず無視（ラグ時の誤検出でユーザー体験が悪化するため）
       }
-    }
-  }, [selectedCell, gameState.currentPlayer, gameState.players, gameState.gameStatus, makeMove, isUserTurn, params.role, params.mode]);
+    },
+    [selectedCell, gameState, makeMove, params.mode, params.room, resolvedRole, canActThisTurn]
+  );
 
   // AIの手番処理
   useEffect(() => {
@@ -436,13 +406,10 @@ export default function GameScreen() {
     // 受信購読（初回のみ登録）
     if (onlineUnsubRef.current) return;
 
-    console.log('[GAME] registering watchRoom');
     onlineUnsubRef.current = watchRoom(String(params.room), (room) => {
-      console.log('[WATCHROOM] received room update:', room.id, 'state exists:', !!room.state);
       if (room.state) {
         try {
           const parsed = typeof room.state === 'string' ? JSON.parse(room.state as any) : room.state;
-          console.log('[WATCHROOM] parsed state:', parsed?.gameStatus, 'currentPlayer:', parsed?.currentPlayer);
 
           // 状態を同期（常に同期するように簡素化）
           isApplyingRemoteRef.current = true;
@@ -469,7 +436,6 @@ export default function GameScreen() {
 
     return () => {
       if (onlineUnsubRef.current) {
-        console.log('[GAME] unsubscribing watchRoom');
         onlineUnsubRef.current();
       }
     };
@@ -686,8 +652,6 @@ export default function GameScreen() {
   const availablePieces = currentPlayer?.pieces || [];
   const nPieces = currentPlayer?.nPieces || 0;
   
-  console.log('[GAME] render: gameStatus=', gameState.gameStatus, 'players length=', gameState.players?.length, 'gameStarted=', gameStarted, 'isUserTurn=', isUserTurn, 'resolvedRole=', resolvedRole);
-  
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={APP_BG_GRADIENT} style={styles.background} pointerEvents="none" />
@@ -859,7 +823,6 @@ export default function GameScreen() {
                 marginTop: 15
               }}
               onPress={() => {
-                console.log('[GAME] modal cancel');
                 setShowPieceSelector(false);
                 setSelectedCell(null);
               }}

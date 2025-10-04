@@ -172,13 +172,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
   
   const makeMove = useCallback((row: number, col: number, value: number | 'n'): boolean => {
-    console.log('[GAMECTX] makeMove attempt:', { row, col, value, status: gameState.gameStatus });
-    
     if (gameState.gameStatus !== 'playing') {
-      console.log('[GAMECTX] game not playing, status:', gameState.gameStatus);
       return false;
     }
-    
+
     const isValid = validateMove(
       gameState.board,
       row,
@@ -187,23 +184,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       gameState.currentPlayer,
       gameState.players
     );
-    
-    console.log('[GAMECTX] validateMove result:', isValid);
-    
+
     if (isValid) {
-      console.log('[GAMECTX] PLACE_PIECE', { row, col, value, playerId: gameState.currentPlayer });
       dispatch({
         type: 'PLACE_PIECE',
         payload: { row, col, value, playerId: gameState.currentPlayer }
       });
       return true;
     } else {
-      console.log('[GAMECTX] move invalid - checking reasons:');
-      console.log('- cell occupied:', gameState.board[row][col] !== null);
-      console.log('- available pieces:', gameState.players[gameState.currentPlayer].pieces);
-      console.log('- n pieces:', gameState.players[gameState.currentPlayer].nPieces);
     }
-    
+
     return false;
   }, [dispatch, gameState.board, gameState.currentPlayer, gameState.gameStatus, gameState.players]);
   

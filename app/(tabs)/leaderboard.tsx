@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import type { ColorValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Crown, Medal, Award } from 'lucide-react-native';
@@ -195,6 +196,14 @@ interface PodiumCardProps {
   isCurrentPlayer: boolean;
 }
 
+const PODIUM_COLORS: Record<number, readonly [ColorValue, ColorValue]> = {
+  1: ['#FFD700', '#FFA500'] as const,
+  2: ['#C0C0C0', '#A0A0A0'] as const,
+  3: ['#CD7F32', '#B8860B'] as const
+};
+
+const DEFAULT_PODIUM_COLOR: readonly [ColorValue, ColorValue] = ['#8E8E8E', '#696969'] as const;
+
 const PodiumCard: React.FC<PodiumCardProps> = ({ player, rank, isCurrentPlayer }) => {
   const getPodiumHeight = (rank: number) => {
     switch (rank) {
@@ -209,18 +218,8 @@ const PodiumCard: React.FC<PodiumCardProps> = ({ player, rank, isCurrentPlayer }
     }
   };
 
-  const getPodiumColor = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return ['#FFD700', '#FFA500'];
-      case 2:
-        return ['#C0C0C0', '#A0A0A0'];
-      case 3:
-        return ['#CD7F32', '#B8860B'];
-      default:
-        return ['#8E8E8E', '#696969'];
-    }
-  };
+  const getPodiumColor = (rank: number): readonly [ColorValue, ColorValue] =>
+    PODIUM_COLORS[rank] ?? DEFAULT_PODIUM_COLOR;
 
   return (
     <View style={[styles.podiumCard, { height: getPodiumHeight(rank) }]}>

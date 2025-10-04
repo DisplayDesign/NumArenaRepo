@@ -27,7 +27,7 @@ export const GameResultOverlay: React.FC<GameResultOverlayProps> = ({
         gradientColors={[
           'rgba(255,255,255,0.12)',
           'rgba(255,255,255,0.05)'
-        ]}
+        ] as const}
         borderRadius={22}
         blurIntensity={22}
       >

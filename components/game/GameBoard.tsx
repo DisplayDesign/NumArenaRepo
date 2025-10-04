@@ -2,7 +2,6 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 // removed: background gradient
 import { GamePiece as GamePieceType } from '@/types/game';
-import { LIQUID_GLASS_COLORS, ANIMATION_CONFIG } from '@/constants/colors';
 import { GamePiece } from './GamePiece';
 
 interface GameBoardProps {
@@ -32,7 +31,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
   const onGridLayout = useCallback((e: any) => {
     const w = Math.floor(e.nativeEvent.layout.width);
-    console.log('[BOARD] grid layout:', w);
     const newSize = Math.floor((w - gap * 3) / 4);
     if (newSize > 0 && newSize !== cellSize) {
       setCellSize(newSize);
@@ -40,11 +38,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   }, [cellSize]);
 
   const pieceSize = Math.max(10, cellSize - 4);
-
-  // 初回描画時のみログ出力（デバッグ用）
-  React.useEffect(() => {
-    console.log('[BOARD] initial render:', { boardWidth, cellSize, pieceSize, disabled });
-  }, []);
 
   return (
     <View style={[styles.boardContainer, { width: boardWidth, height: boardWidth, alignSelf: 'center' }]} pointerEvents="box-none">
@@ -64,7 +57,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   col={colIndex}
                   cell={cell}
                   onPress={() => {
-                    console.log(`[GAME] cell press called: ${rowIndex}, ${colIndex}`);
                     onCellPress(rowIndex, colIndex);
                   }}
                   disabled={disabled}
@@ -90,25 +82,10 @@ interface GameCellProps {
 }
 
 const GameCellBase: React.FC<GameCellProps> = ({ row, col, cell, onPress, disabled, cellSize, pieceSize }) => {
-  console.log(`[CELL] render ${row},${col}: size=${cellSize}, disabled=${disabled}`);
-
   const handlePress = () => {
-    console.log(`[TAP] cell press ${row},${col}`);
-    console.log(`[CELL] press ${row},${col}: calling onPress, disabled=${disabled}, TouchableOpacity enabled=${!disabled}, cellSize=${cellSize}`);
     if (!disabled) {
-      console.log(`[CELL] press ${row},${col}: executing onPress`);
       onPress();
-    } else {
-      console.log(`[CELL] press ${row},${col}: blocked by disabled`);
     }
-  };
-
-  const handlePressIn = () => {
-    console.log(`[TAP] cell pressIn ${row},${col}`);
-  };
-
-  const handlePressOut = () => {
-    console.log(`[TAP] cell pressOut ${row},${col}`);
   };
 
   return (
@@ -126,8 +103,6 @@ const GameCellBase: React.FC<GameCellProps> = ({ row, col, cell, onPress, disabl
           cell && styles.occupiedCell
         ]}
         onPress={handlePress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
         disabled={disabled}
         activeOpacity={0.7}
       >
