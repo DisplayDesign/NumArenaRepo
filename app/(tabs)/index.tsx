@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ColorValue } from 'react-native';
 import type { ColorValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -202,14 +202,22 @@ export default function HomeScreen() {
   );
 }
 
+<<<<<<< Updated upstream
 type GradientPair = readonly [ColorValue, ColorValue];
+=======
+type GradientTuple = readonly [ColorValue, ColorValue];
+>>>>>>> Stashed changes
 
 interface GameModeCardProps {
   title: string;
   subtitle: string;
   icon: React.ReactNode;
   onPress: () => void;
+<<<<<<< Updated upstream
   gradient: GradientPair;
+=======
+  gradient: GradientTuple;
+>>>>>>> Stashed changes
 }
 
 const GameModeCard: React.FC<GameModeCardProps> = ({
@@ -237,7 +245,15 @@ const GameModeCard: React.FC<GameModeCardProps> = ({
 interface StatCardProps {
   label: string;
   value: number;
+<<<<<<< Updated upstream
   gradient: GradientPair;
+=======
+<<<<<<< ours
+  gradient: GradientTuple;
+=======
+  gradient: readonly [ColorValue, ColorValue, ...ColorValue[]];
+>>>>>>> theirs
+>>>>>>> Stashed changes
   accent: string;
 }
 

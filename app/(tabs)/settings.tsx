@@ -333,6 +333,7 @@ const styles = StyleSheet.create({
   },
   languageSelector: {
     flexDirection: 'row',
+<<<<<<< Updated upstream
     alignItems: 'center',
     gap: 12,
     marginTop: 12,
@@ -360,6 +361,50 @@ const styles = StyleSheet.create({
   },
   languageOptionTextActive: {
     color: '#FFFFFF'
+=======
+<<<<<<< ours
+    alignItems: 'center',
+    gap: 12
+=======
+    gap: 8
+>>>>>>> theirs
+  },
+  languageOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+<<<<<<< ours
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)'
+  },
+  languageOptionActive: {
+    backgroundColor: LIQUID_GLASS_COLORS.primary.coral
+  },
+  languageOptionText: {
+    fontSize: 14,
+    color: LIQUID_GLASS_COLORS.text.primary,
+=======
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  languageOptionActive: {
+    backgroundColor: LIQUID_GLASS_COLORS.primary.coral,
+    borderColor: LIQUID_GLASS_COLORS.primary.coral
+  },
+  languageOptionText: {
+    color: LIQUID_GLASS_COLORS.text.secondary,
+>>>>>>> theirs
+    fontWeight: '600',
+    ...TEXT_OUTLINE_STYLE
+  },
+  languageOptionTextActive: {
+<<<<<<< ours
+    color: '#fff'
+=======
+    color: '#FFFFFF'
+>>>>>>> theirs
+>>>>>>> Stashed changes
   },
   nameItem: {
     paddingVertical: 12,
